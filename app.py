@@ -65,8 +65,8 @@ layout_base = dict(
     )
 )
 
-# items = ["colesterol_total", "ldl", "hdl"]
-items = history[settings.COLUMN_ITEM].unique()
+items = history[settings.COLUMN_ITEM].unique()  # e.g., ["colesterol_total", "ldl", "hdl"]
+ratio_items = [("triglicerideos", "hdl")]
 
 app.layout = html.Div(children=
                       [
@@ -82,7 +82,24 @@ app.layout = html.Div(children=
                                    ]
                                    )
                           for name in items
+                      ] +
+                      [
+                          html.Div(children=
+                                   [
+                                       html.H1(children="{}/{}".format(name_a, name_b))
+                                   ] +
+                                   [
+                                       create_items_ratio_plot(history, name_a, name_b,
+                                                               reference_range="[{\"Desejável\": [0, 2]}]",
+                                                               layout_base=layout_base,
+                                                               life_events=life_events,
+                                                               show_table=False,
+                                                               last_exam_date=settings.LAST_EXAM_DATE)
+                                   ]
+                                   )
+                          for name_a, name_b in ratio_items
                       ]
+
                       )
 
 

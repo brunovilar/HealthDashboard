@@ -62,7 +62,8 @@ def _create_annotations_from_life_events(dataset, life_events):
 
             )
             for index, row in life_events.iterrows()
-            if min(dataset.date) <= row.date <= max(dataset.date)]
+            if min(dataset.date) <= row.date <= max(dataset.date)
+        ]
 
         shapes = [
           {
@@ -130,7 +131,8 @@ def _create_range_items(dataset, name):
     return plot_range_item
 
 
-def create_item_history_plot(dataset, name, life_events=None, layout_base=None, show_table=False, last_exam_date=settings.LAST_EXAM_DATE):
+def create_item_history_plot(dataset, name, life_events=None, layout_base=None, show_table=False,
+                             last_exam_date=settings.LAST_EXAM_DATE):
 
     dataset = dataset.loc[dataset[settings.COLUMN_ITEM] == name]
     current_dataset = dataset.loc[dataset[settings.COLUMN_DATE] == last_exam_date]
@@ -178,6 +180,34 @@ def create_item_history_plot(dataset, name, life_events=None, layout_base=None, 
             'layout': layout
         }
     )
+
+
+def create_items_ratio_plot(dataset, name_a, name_b, reference_range="", layout_base=None,
+                            life_events=None, show_table=False, last_exam_date=settings.LAST_EXAM_DATE):
+
+    ratio_dataset = pd.merge(dataset.loc[dataset[settings.COLUMN_ITEM] == name_a],
+                             dataset.loc[dataset[settings.COLUMN_ITEM] == name_b][
+                                 [settings.COLUMN_DATE, settings.COLUMN_LABORATORY, settings.COLUMN_VALUE]],
+                             on=[settings.COLUMN_DATE, settings.COLUMN_LABORATORY],
+                             how="inner",
+                             suffixes=["", name_b])
+
+    new_name = "{}/{}".format(name_a, name_b)
+    ratio_dataset[settings.COLUMN_ITEM] = new_name
+    ratio_dataset[settings.COLUMN_TITLE] = "{}/{}".format(dataset.loc[dataset[settings.COLUMN_ITEM] == name_a]
+                                                          [settings.COLUMN_TITLE].values[0],
+                                                          dataset.loc[dataset[settings.COLUMN_ITEM] == name_b]
+                                                          [settings.COLUMN_TITLE].values[0])
+    ratio_dataset[settings.COLUMN_REFERENCE_RANGE] = reference_range
+    ratio_dataset[settings.COLUMN_ITEM_DESCRIPTION] = ["{}/{}".format(row[settings.COLUMN_VALUE],
+                                                                      row[settings.COLUMN_VALUE + name_b]
+                                                                      )
+                                                       for index, row in ratio_dataset.iterrows()]
+
+    ratio_dataset[settings.COLUMN_VALUE] = ratio_dataset[settings.COLUMN_VALUE] / ratio_dataset[settings.COLUMN_VALUE +
+                                                                                                name_b]
+
+    return create_item_history_plot(ratio_dataset, new_name, life_events, layout_base, show_table, last_exam_date)
 
 
 def dataframe_to_table(dataframe):

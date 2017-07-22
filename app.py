@@ -98,7 +98,7 @@ app.layout = html.Div(id="health_dashboard", children=
               [Input('exam_item_type', 'value')])
 def display_type(selector):
     if selector == 'all':
-        return history.name.unique()
+        return list(history.name.unique())
     elif selector == 'tireoide':
         return ['tsh', 't4', 't3']
     else:

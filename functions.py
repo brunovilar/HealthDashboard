@@ -6,7 +6,7 @@ import dash_core_components as dcc
 import plotly.graph_objs as go
 import dash_html_components as html
 from plotly.graph_objs import *
-
+from datetime import datetime
 
 def materialize_annotations(row):
 
@@ -221,3 +221,68 @@ def dataframe_to_table(dataframe):
         table.append(html.Tr(html_row))
 
     return table
+
+
+def filter_dataset(dataset, items_to_display, year_range):
+
+    return dataset[
+            dataset[settings.COLUMN_ITEM].isin(items_to_display)
+            & (dataset[settings.COLUMN_DATE] > datetime(year_range[0], 1, 1))
+            & (dataset[settings.COLUMN_DATE] < datetime(year_range[1], 12, 31))
+    ]
+
+
+def create_dashboard(dataset, life_events):
+
+    layout_base = dict(
+        autosize=True,
+        height=500,
+        font=dict(color='#CCCCCC'),
+        titlefont=dict(color='#CCCCCC', size='14'),
+        margin=dict(
+            l=35,
+            r=35,
+            b=35,
+            t=45
+        ),
+        hovermode="closest",
+        plot_bgcolor="#191A1A",
+        paper_bgcolor="#020202",
+        legend=dict(font=dict(size=10), orientation='h'),
+        mapbox=dict(
+            style="dark",
+            center=dict(
+                lon=-78.05,
+                lat=42.54
+            ),
+            zoom=7,
+        )
+    )
+
+    items = dataset[settings.COLUMN_ITEM].unique()  # e.g., ["colesterol_total", "ldl", "hdl"]
+    ratio_items = [("triglicerideos", "hdl")] if all(item in items for item in ["triglicerideos", "hdl"]) else []
+
+    content = [
+                  html.Div(children=
+                           [
+                               create_item_history_plot(dataset, name, life_events, layout_base)
+                           ],
+                           className='row', style={'margin-top': '10'}
+                           )
+                  for name in items
+              ] + [
+                  html.Div(children=
+                           [
+                               create_items_ratio_plot(dataset, name_a, name_b,
+                                                       reference_range="[{\"Desejável\": [0, 2]}]",
+                                                       layout_base=layout_base,
+                                                       life_events=life_events,
+                                                       show_table=False,
+                                                       last_exam_date=settings.LAST_EXAM_DATE)
+                           ],
+                           className='row', style={'margin-top': '10'}
+                           )
+                  for name_a, name_b in ratio_items
+              ]
+
+    return content
